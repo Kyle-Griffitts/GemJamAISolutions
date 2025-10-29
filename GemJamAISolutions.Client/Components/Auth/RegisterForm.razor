@@ -1,0 +1,49 @@
+@using GemJamAISolutions.Client.Services
+
+<EditForm Model="@RegisterRequest" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label for="registerEmail" class="form-label">Email</label>
+        <InputText id="registerEmail" class="form-control form-control-lg" @bind-Value="RegisterRequest.Email" placeholder="Enter your email" />
+        <ValidationMessage For="@(() => RegisterRequest.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="registerPassword" class="form-label">Password</label>
+        <InputText id="registerPassword" type="password" class="form-control form-control-lg" @bind-Value="RegisterRequest.Password" placeholder="Enter your password" />
+        <ValidationMessage For="@(() => RegisterRequest.Password)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <InputText id="confirmPassword" type="password" class="form-control form-control-lg" @bind-Value="RegisterRequest.ConfirmPassword" placeholder="Confirm your password" />
+        <ValidationMessage For="@(() => RegisterRequest.ConfirmPassword)" />
+    </div>
+
+    <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-primary btn-lg" disabled="@IsLoading">
+            @if (IsLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            }
+            Create Account
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public RegisterRequest RegisterRequest { get; set; } = new();
+
+    [Parameter, EditorRequired]
+    public EventCallback OnSubmit { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        await OnSubmit.InvokeAsync();
+    }
+}

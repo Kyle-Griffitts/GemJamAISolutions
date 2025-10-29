@@ -1,0 +1,50 @@
+@using GemJamAISolutions.Client.Services
+
+<EditForm Model="@LoginRequest" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label for="loginEmail" class="form-label">Email</label>
+        <InputText id="loginEmail" class="form-control form-control-lg" @bind-Value="LoginRequest.Email" placeholder="Enter your email" />
+        <ValidationMessage For="@(() => LoginRequest.Email)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="loginPassword" class="form-label">Password</label>
+        <InputText id="loginPassword" type="password" class="form-control form-control-lg" @bind-Value="LoginRequest.Password" placeholder="Enter your password" />
+        <ValidationMessage For="@(() => LoginRequest.Password)" />
+    </div>
+
+    <div class="mb-3 form-check">
+        <InputCheckbox id="rememberMe" class="form-check-input" @bind-Value="LoginRequest.RememberMe" />
+        <label class="form-check-label" for="rememberMe">
+            Remember me
+        </label>
+    </div>
+
+    <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-primary btn-lg" disabled="@IsLoading">
+            @if (IsLoading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            }
+            Sign in with Email
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoginRequest LoginRequest { get; set; } = new();
+
+    [Parameter, EditorRequired]
+    public EventCallback OnSubmit { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        await OnSubmit.InvokeAsync();
+    }
+}
