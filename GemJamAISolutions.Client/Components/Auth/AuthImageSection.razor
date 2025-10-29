@@ -1,0 +1,11 @@
+<div class="col-lg-6 d-none d-lg-block auth-image-section p-0">
+    <img src="@ImagePath" alt="@ImageAlt" class="auth-full-image" />
+</div>
+
+@code {
+    [Parameter]
+    public string ImagePath { get; set; } = "/images/hurricane1.png";
+
+    [Parameter]
+    public string ImageAlt { get; set; } = "FloodReady AI";
+}

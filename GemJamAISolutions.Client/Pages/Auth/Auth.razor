@@ -1,0 +1,162 @@
+@page "/auth"
+@using GemJamAISolutions.Client.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>@(isLoginMode ? "Login" : "Register")</PageTitle>
+
+<div class="auth-container">
+    <div class="container-fluid h-100">
+        <div class="row h-100 g-0">
+            <!-- Left Side: Form -->
+            <div class="col-lg-6 col-md-12 d-flex align-items-center justify-content-center auth-form-section">
+                <div class="auth-form-wrapper w-100 px-4 px-md-5">
+                    <div class="auth-form-content">
+                        <!-- Logo/Brand -->
+                        <div class="mb-4">
+                            <h2 class="fw-bold">FloodReady AI</h2>
+                        </div>
+
+                        <!-- Welcome Text -->
+                        <h3 class="fw-bold mb-2">Welcome @(isLoginMode ? "Back" : "to FloodReady AI")</h3>
+                        <p class="text-muted mb-4">
+                            @if (isLoginMode)
+                            {
+                                <span>Don't have an account? <a href="javascript:void(0)" @onclick="ToggleMode" class="text-primary text-decoration-none fw-semibold">Sign up</a></span>
+                            }
+                            else
+                            {
+                                <span>Already have an account? <a href="javascript:void(0)" @onclick="ToggleMode" class="text-primary text-decoration-none fw-semibold">Sign in</a></span>
+                            }
+                        </p>
+
+                        <!-- Messages -->
+                        <AuthMessages ErrorMessage="@errorMessage"
+                                      SuccessMessage="@successMessage"
+                                      Errors="@errors" />
+
+                        <!-- Forms -->
+                        @if (isLoginMode)
+                        {
+                            <LoginForm LoginRequest="@loginRequest"
+                                       OnSubmit="@HandleLogin"
+                                       IsLoading="@isLoading" />
+                        }
+                        else
+                        {
+                            <RegisterForm RegisterRequest="@registerRequest"
+                                          OnSubmit="@HandleRegister"
+                                          IsLoading="@isLoading" />
+                        }
+
+                        <!-- Terms and Privacy -->
+                        <p class="text-muted small mt-4">
+                            By signing in, you agree to our <a href="#" class="text-decoration-none">Terms</a> & <a href="#" class="text-decoration-none">Privacy Policy</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Image -->
+            <AuthImageSection />
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoginMode = true;
+    private LoginRequest loginRequest = new();
+    private RegisterRequest registerRequest = new();
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private List<string> errors = new();
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is already authenticated
+        var userInfo = await AuthService.GetUserInfoAsync();
+
+        if (userInfo != null && userInfo.IsAuthenticated)
+        {
+            // Redirect to home if already logged in
+            Navigation.NavigateTo("/", replace: true);
+        }
+    }
+
+    private void ToggleMode()
+    {
+        isLoginMode = !isLoginMode;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        errors.Clear();
+    }
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            var response = await AuthService.LoginAsync(loginRequest);
+
+            if (response.Success)
+            {
+                successMessage = "Login successful! Redirecting...";
+                await Task.Delay(1000);
+                Navigation.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = response.Message;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        errors.Clear();
+
+        try
+        {
+            var response = await AuthService.RegisterAsync(registerRequest);
+
+            if (response.Success)
+            {
+                successMessage = "Registration successful! Switching to login...";
+                await Task.Delay(2000);
+
+                // Clear register form and switch to login mode
+                registerRequest = new();
+                isLoginMode = true;
+                successMessage = "Please log in with your new account.";
+            }
+            else
+            {
+                errorMessage = response.Message;
+                errors = response.Errors;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,33 @@
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        @ErrorMessage
+        @if (Errors != null && Errors.Any())
+        {
+            <ul class="mb-0 mt-2">
+                @foreach (var error in Errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(SuccessMessage))
+{
+    <div class="alert alert-success" role="alert">
+        @SuccessMessage
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public string? SuccessMessage { get; set; }
+
+    [Parameter]
+    public List<string>? Errors { get; set; }
+}

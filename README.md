@@ -1,4 +1,4 @@
-## GemJam Project
+## FloodReady AI - GemJam DevFest Project
 - Problem:
-- How do we integrate as use AI that augments peoples ability to work and live?
-- How do we use AI while preserving humanity?
+- How can AI help communities prepare for and respond to flood disasters?
+- How do we use AI to augment emergency response while preserving humanity?

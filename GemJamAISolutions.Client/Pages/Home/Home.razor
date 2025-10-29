@@ -1,0 +1,31 @@
+@page "/"
+@using GemJamAISolutions.Client.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Home</PageTitle>
+
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="text-center">
+        <h1 class="display-1 fw-bold">Home</h1>
+        @if (userInfo != null && userInfo.IsAuthenticated)
+        {
+            <p class="lead mt-3">Welcome back, @userInfo.Email!</p>
+        }
+    </div>
+</div>
+
+@code {
+    private UserInfo? userInfo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userInfo = await AuthService.GetUserInfoAsync();
+
+        // Redirect to auth page if not authenticated
+        if (userInfo == null || !userInfo.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/auth", replace: true);
+        }
+    }
+}
