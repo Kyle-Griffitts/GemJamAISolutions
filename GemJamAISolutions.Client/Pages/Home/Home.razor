@@ -1,22 +1,111 @@
 @page "/"
 @using GemJamAISolutions.Client.Services
+@using Microsoft.JSInterop
 @inject AuthService AuthService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<PageTitle>Home</PageTitle>
+<PageTitle>FloodReady AI - Add Location</PageTitle>
 
-<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
-    <div class="text-center">
-        <h1 class="display-1 fw-bold">Home</h1>
-        @if (userInfo != null && userInfo.IsAuthenticated)
-        {
-            <p class="lead mt-3">Welcome back, @userInfo.Email!</p>
-        }
+<div class="home-container min-vh-100 d-flex align-items-center">
+    <div class="container py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+                <div class="bg-white rounded-4 shadow-lg p-3 p-md-4">
+                    <!-- Header -->
+                    <div class="d-flex align-items-center mb-4 gap-2">
+                        <button class="btn btn-link text-decoration-none p-2 btn-back" @onclick="GoBack">
+                            <span class="fs-4">&larr;</span>
+                        </button>
+                        <h2 class="fs-4 fs-md-3 fw-semibold text-dark mb-0">Add new address</h2>
+                    </div>
+
+                    <!-- Form -->
+                    <EditForm Model="@addressModel" OnValidSubmit="@HandleSubmit">
+                        <!-- Address Line 1 -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-secondary">Address Line 1</label>
+                            <input type="text" class="form-control form-control-lg rounded-3 bg-light" @bind="addressModel.AddressLine1" placeholder="Street address" />
+                        </div>
+
+                        <!-- City -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-secondary">City</label>
+                            <select class="form-select form-select-lg rounded-3 bg-light" @bind="addressModel.City">
+                                <option value="">Select City</option>
+                                <option value="New York">New York</option>
+                                <option value="Los Angeles">Los Angeles</option>
+                                <option value="Miami">Miami</option>
+                            </select>
+                        </div>
+
+                        <!-- State -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-secondary">State</label>
+                            <select class="form-select form-select-lg rounded-3 bg-light" @bind="addressModel.State">
+                                <option value="">Select State</option>
+                                <option value="NY">New York</option>
+                                <option value="CA">California</option>
+                                <option value="FL">Florida</option>
+                            </select>
+                        </div>
+
+                        <!-- Zip Code -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-secondary">Zip Code</label>
+                            <input type="text" class="form-control form-control-lg rounded-3 bg-light" @bind="addressModel.ZipCode" placeholder="Enter zip code" />
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 fw-semibold mt-3 btn-gradient">
+                            Save & Continue
+                        </button>
+                    </EditForm>
+
+                    <!-- Privacy Footer -->
+                    <div class="mt-4 pt-3 border-top border-light">
+                        <div class="d-flex align-items-center justify-content-center gap-2 text-center">
+                            <span class="text-muted" style="font-size: 0.875rem;">🔒</span>
+                            <p class="small text-muted mb-0 fw-medium">
+                                Your address will not be saved
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Location Modal -->
+    @if (showLocationModal)
+    {
+        <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center modal-backdrop-custom" style="z-index: 1050;" @onclick="CloseModal">
+            <div class="bg-white rounded-4 shadow-lg p-4 mx-3" style="max-width: 400px; width: 100%;" @onclick:stopPropagation="true">
+                <div class="mb-3">
+                    <h3 class="fs-4 fw-semibold text-dark mb-2">Share your location</h3>
+                    <p class="text-secondary small mb-0">Help us provide better flood risk assessment for your area</p>
+                </div>
+                <div class="bg-light rounded-3 p-5 mb-3 text-center">
+                    <div class="d-flex flex-column align-items-center gap-2">
+                        <span class="display-4">🗺️</span>
+                        <p class="text-muted small mb-0">Map view</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-lg w-100 rounded-3 fw-semibold mb-2 btn-gradient" @onclick="ShareLocation">
+                    📍 Share Location
+                </button>
+                <button class="btn btn-link text-hurricane w-100 text-decoration-none py-2" @onclick="CloseModal" @onclick:stopPropagation="true">
+                    Skip
+                </button>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     private UserInfo? userInfo;
+    private AddressModel addressModel = new();
+    private bool showLocationModal = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -27,5 +116,59 @@
         {
             Navigation.NavigateTo("/auth", replace: true);
         }
+        else
+        {
+            // Show location modal immediately
+            showLocationModal = true;
+        }
+    }
+
+    private void HandleSubmit()
+    {
+        // Redirect to analysis page after form submission
+        Navigation.NavigateTo("/analysis");
+    }
+
+    private async Task ShareLocation()
+    {
+        try
+        {
+            // Request geolocation from browser using our JavaScript helper
+            var coords = await JSRuntime.InvokeAsync<GeolocationCoordinates>("getGeolocation");
+
+            // Coordinates are already logged in the JavaScript function
+            // Redirect to analysis page
+            Navigation.NavigateTo("/analysis");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error getting location: {ex.Message}");
+            // Even on error, redirect to analysis page (user can try again later)
+            Navigation.NavigateTo("/analysis");
+        }
+    }
+
+    private void CloseModal()
+    {
+        showLocationModal = false;
+    }
+
+    private void GoBack()
+    {
+        // Handle back navigation
+    }
+
+    public class AddressModel
+    {
+        public string AddressLine1 { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
+        public string ZipCode { get; set; } = string.Empty;
+    }
+
+    public class GeolocationCoordinates
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }

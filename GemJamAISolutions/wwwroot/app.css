@@ -58,3 +58,30 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Custom gradient button (hurricane-inspired theme) */
+.btn-gradient {
+    background: linear-gradient(135deg, #2d5f7e 0%, #4a7c9e 100%);
+    border: none;
+    color: white !important;
+}
+
+.btn-gradient:hover {
+    background: linear-gradient(135deg, #1a3a52 0%, #2d5f7e 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(45, 95, 126, 0.3);
+    color: white !important;
+}
+
+.btn-gradient:active {
+    transform: translateY(0);
+}
+
+/* Hurricane-inspired text color for links */
+.text-hurricane {
+    color: #2d5f7e !important;
+}
+
+.text-hurricane:hover {
+    color: #1a3a52 !important;
+}
