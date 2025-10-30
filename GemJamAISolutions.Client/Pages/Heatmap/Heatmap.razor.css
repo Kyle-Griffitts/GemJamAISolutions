@@ -1,0 +1,11 @@
+/* Hurricane-inspired gradient background (same as home page) */
+.heatmap-container {
+    background: linear-gradient(135deg, #1a3a52 0%, #2d5f7e 50%, #4a7c9e 100%);
+    min-height: 100vh;
+}
+
+/* Custom hover effect for back button */
+.btn-back:hover {
+    transform: translateX(-4px);
+    color: #4a7c9e;
+}

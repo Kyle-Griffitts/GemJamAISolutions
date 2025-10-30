@@ -4,6 +4,7 @@ using GemJamAISolutions.Data;
 using GemJamAISolutions.Endpoints;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using dymaptic.GeoBlazor.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,6 +57,7 @@ builder.Services.AddScoped(sp =>
 });
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddGeoBlazor(builder.Configuration);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
