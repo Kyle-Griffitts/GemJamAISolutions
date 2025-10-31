@@ -31,29 +31,13 @@
                         <!-- City -->
                         <div class="mb-3">
                             <label class="form-label small fw-medium text-secondary">City</label>
-                            <select class="form-select form-select-lg rounded-3 bg-light" @bind="addressModel.City">
-                                <option value="">Select City</option>
-                                <option value="New York">New York</option>
-                                <option value="Los Angeles">Los Angeles</option>
-                                <option value="Miami">Miami</option>
-                            </select>
+                            <input type="text" class="form-control form-control-lg rounded-3 bg-light" value="Orlando" disabled readonly />
                         </div>
 
                         <!-- State -->
                         <div class="mb-3">
                             <label class="form-label small fw-medium text-secondary">State</label>
-                            <select class="form-select form-select-lg rounded-3 bg-light" @bind="addressModel.State">
-                                <option value="">Select State</option>
-                                <option value="NY">New York</option>
-                                <option value="CA">California</option>
-                                <option value="FL">Florida</option>
-                            </select>
-                        </div>
-
-                        <!-- Zip Code -->
-                        <div class="mb-3">
-                            <label class="form-label small fw-medium text-secondary">Zip Code</label>
-                            <input type="text" class="form-control form-control-lg rounded-3 bg-light" @bind="addressModel.ZipCode" placeholder="Enter zip code" />
+                            <input type="text" class="form-control form-control-lg rounded-3 bg-light" value="Florida" disabled readonly />
                         </div>
 
                         <!-- Submit Button -->
@@ -161,8 +145,8 @@
     public class AddressModel
     {
         public string AddressLine1 { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-        public string State { get; set; } = string.Empty;
+        public string City { get; set; } = "Orlando";
+        public string State { get; set; } = "Florida";
         public string ZipCode { get; set; } = string.Empty;
     }
 
