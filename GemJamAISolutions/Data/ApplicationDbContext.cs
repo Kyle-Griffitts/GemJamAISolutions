@@ -11,6 +11,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     }
 
     public DbSet<FloodRiskResult> FloodRiskResults { get; set; }
+    public DbSet<Shelter> Shelters { get; set; }
+    public DbSet<SandbagDistribution> SandbagDistributions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -35,6 +37,42 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.GeojsonPath).HasColumnName("geojson_path");
             entity.Property(e => e.ProcessedPath).HasColumnName("processed_path");
             entity.Property(e => e.ModelResponse).HasColumnName("model_response");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // Configure Shelter table
+        builder.Entity<Shelter>(entity =>
+        {
+            entity.ToTable("shelters");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Address).HasColumnName("address").IsRequired();
+            entity.Property(e => e.City).HasColumnName("city").IsRequired();
+            entity.Property(e => e.State).HasColumnName("state").IsRequired();
+            entity.Property(e => e.ZipCode).HasColumnName("zip_code");
+            entity.Property(e => e.ShelterType).HasColumnName("shelter_type").IsRequired();
+            entity.Property(e => e.IsPetFriendly).HasColumnName("is_pet_friendly").IsRequired();
+            entity.Property(e => e.OpenedDate).HasColumnName("opened_date");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
+
+        // Configure SandbagDistribution table
+        builder.Entity<SandbagDistribution>(entity =>
+        {
+            entity.ToTable("sandbag_distributions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
+            entity.Property(e => e.Address).HasColumnName("address").IsRequired();
+            entity.Property(e => e.City).HasColumnName("city").IsRequired();
+            entity.Property(e => e.State).HasColumnName("state").IsRequired();
+            entity.Property(e => e.ZipCode).HasColumnName("zip_code");
+            entity.Property(e => e.MaxSandbagsPerResident).HasColumnName("max_sandbags_per_resident").IsRequired();
+            entity.Property(e => e.BringOwnShovel).HasColumnName("bring_own_shovel").IsRequired();
+            entity.Property(e => e.AvailableFrom).HasColumnName("available_from");
+            entity.Property(e => e.AvailableUntil).HasColumnName("available_until");
+            entity.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
     }

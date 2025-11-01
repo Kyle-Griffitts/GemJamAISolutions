@@ -1,7 +1,10 @@
 @page "/analysis"
 @using GemJamAISolutions.Client.Services
+@using GemJamAISolutions.Client.Models
+@using System.Net.Http.Json
 @inject AuthService AuthService
 @inject NavigationManager Navigation
+@inject HttpClient HttpClient
 
 <PageTitle>FloodReady AI - Risk Analysis</PageTitle>
 
@@ -31,17 +34,33 @@
 
                 <!-- High Risk Alert -->
                 <div class="bg-white rounded-4 shadow-lg p-3 p-md-4 mb-3">
-                    <div class="d-flex align-items-start gap-3 mb-3">
-                        <span class="fs-1">⚠️</span>
-                        <div class="flex-grow-1">
-                            <h2 class="fs-4 fw-semibold text-danger mb-2">High Flood Risk Detected</h2>
-                            <p class="text-dark mb-0">Your area has a <strong>78% flood risk</strong> based on current weather patterns, elevation data, and historical flood records.</p>
+                    @if (floodRiskResult == null)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="bg-danger bg-opacity-10 rounded-3 p-3">
-                        <p class="small text-danger mb-2 fw-semibold">⏰ Immediate Action Recommended</p>
-                        <p class="small text-dark mb-0">Heavy rainfall is forecasted within the next 24-48 hours. Consider evacuating to higher ground if flooding begins.</p>
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <span class="fs-1">@(floodRiskResult.IsInFloodZone == true ? "⚠️" : "ℹ️")</span>
+                            <div class="flex-grow-1">
+                                <h2 class="fs-4 fw-semibold @(floodRiskResult.IsInFloodZone == true ? "text-danger" : "text-info") mb-2">
+                                    @(floodRiskResult.IsInFloodZone == true ? "Flood Risk Detected" : "Flood Risk Analysis")
+                                </h2>
+                                <p class="text-dark mb-0">@floodRiskResult.ModelResponse</p>
+                            </div>
+                        </div>
+                        @if (floodRiskResult.IsInFloodZone == true)
+                        {
+                            <div class="bg-danger bg-opacity-10 rounded-3 p-3">
+                                <p class="small text-danger mb-2 fw-semibold">⏰ Immediate Action Recommended</p>
+                                <p class="small text-dark mb-0">Heavy rainfall is forecasted within the next 24-48 hours. Consider evacuating to higher ground if flooding begins.</p>
+                            </div>
+                        }
+                    }
                 </div>
 
                 <!-- Risk Factors -->
@@ -102,61 +121,95 @@
                 <!-- Evacuation Centers -->
                 <div class="bg-white rounded-4 shadow-lg p-3 p-md-4 mb-3">
                     <h3 class="fs-5 fw-semibold text-dark mb-3">🏢 Nearby Evacuation Centers</h3>
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item px-0 py-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h4 class="fs-6 fw-semibold text-dark mb-1">Community Center - Main Street</h4>
-                                    <p class="small text-secondary mb-1">📍 0.8 miles away • 15 min walk</p>
-                                </div>
-                                <span class="badge bg-success">Open 24/7</span>
+                    @if (shelters == null)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                            <p class="small text-muted mb-0">Capacity: 500 people • Shelter, food, medical aid available</p>
                         </div>
-                        <div class="list-group-item px-0 py-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h4 class="fs-6 fw-semibold text-dark mb-1">High School Gymnasium</h4>
-                                    <p class="small text-secondary mb-1">📍 1.2 miles away • 20 min walk</p>
+                    }
+                    else if (shelters.Count == 0)
+                    {
+                        <p class="text-muted">No evacuation centers found.</p>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var shelter in shelters)
+                            {
+                                <div class="list-group-item px-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h4 class="fs-6 fw-semibold text-dark mb-1">@shelter.Name</h4>
+                                            <p class="small text-secondary mb-1">📍 @shelter.Address, @shelter.City, @shelter.State @shelter.ZipCode</p>
+                                        </div>
+                                        @if (shelter.OpenedDate.HasValue)
+                                        {
+                                            <span class="badge bg-success">Open</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Standby</span>
+                                        }
+                                    </div>
+                                    <p class="small text-muted mb-0">
+                                        @(shelter.ShelterType == ShelterType.SpecialNeeds ? "Special Needs Shelter" : "General Population Shelter")
+                                        @if (shelter.IsPetFriendly)
+                                        {
+                                            <span> • 🐾 Pet-friendly</span>
+                                        }
+                                    </p>
                                 </div>
-                                <span class="badge bg-success">Open 24/7</span>
-                            </div>
-                            <p class="small text-muted mb-0">Capacity: 800 people • Pet-friendly shelter available</p>
+                            }
                         </div>
-                        <div class="list-group-item px-0 py-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <h4 class="fs-6 fw-semibold text-dark mb-1">County Emergency Relief Center</h4>
-                                    <p class="small text-secondary mb-1">📍 2.5 miles away • 35 min walk</p>
-                                </div>
-                                <span class="badge bg-success">Open 24/7</span>
-                            </div>
-                            <p class="small text-muted mb-0">Full emergency services • Medical personnel on-site</p>
-                        </div>
-                    </div>
+                    }
                 </div>
 
                 <!-- Sandbag Locations -->
                 <div class="bg-white rounded-4 shadow-lg p-3 p-md-4 mb-3">
                     <h3 class="fs-5 fw-semibold text-dark mb-3">🪨 Sandbag Distribution Points</h3>
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <div class="bg-light rounded-3 p-3">
-                                <h4 class="fs-6 fw-semibold text-dark mb-2">Fire Station #3</h4>
-                                <p class="small text-secondary mb-2">📍 0.5 miles away</p>
-                                <p class="small text-muted mb-2">Free sandbags available (limit 25 per household)</p>
-                                <span class="badge bg-info text-dark">Open: 8AM - 8PM</span>
+                    @if (sandbagDistributions == null)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
                         </div>
-                        <div class="col-12 col-md-6">
-                            <div class="bg-light rounded-3 p-3">
-                                <h4 class="fs-6 fw-semibold text-dark mb-2">Public Works Yard</h4>
-                                <p class="small text-secondary mb-2">📍 1.8 miles away</p>
-                                <p class="small text-muted mb-2">Self-serve sandbag station (bring shovel)</p>
-                                <span class="badge bg-info text-dark">Open 24/7</span>
-                            </div>
+                    }
+                    else if (sandbagDistributions.Count == 0)
+                    {
+                        <p class="text-muted">No sandbag distribution points found.</p>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @foreach (var distribution in sandbagDistributions)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <div class="bg-light rounded-3 p-3">
+                                        <h4 class="fs-6 fw-semibold text-dark mb-2">@distribution.Name</h4>
+                                        <p class="small text-secondary mb-2">📍 @distribution.Address, @distribution.City, @distribution.State @distribution.ZipCode</p>
+                                        <p class="small text-muted mb-2">
+                                            Free sandbags available (limit @distribution.MaxSandbagsPerResident per household)
+                                            @if (distribution.BringOwnShovel)
+                                            {
+                                                <span> • Bring your own shovel</span>
+                                            }
+                                        </p>
+                                        @if (distribution.AvailableFrom.HasValue && distribution.AvailableUntil.HasValue)
+                                        {
+                                            <span class="badge bg-info text-dark">Open: @distribution.AvailableFrom.Value.ToString("MMM d") - @distribution.AvailableUntil.Value.ToString("MMM d, yyyy")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Active</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
                         </div>
-                    </div>
+                    }
                 </div>
 
                 <!-- Safety Tips -->
@@ -250,6 +303,31 @@
 </div>
 
 @code {
+    private List<Shelter>? shelters;
+    private List<SandbagDistribution>? sandbagDistributions;
+    private FloodRiskResult? floodRiskResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Fetch flood risk data
+            floodRiskResult = await HttpClient.GetFromJsonAsync<FloodRiskResult>("/api/data/flood-risk/latest");
+
+            // Fetch shelters
+            shelters = await HttpClient.GetFromJsonAsync<List<Shelter>>("/api/data/shelters");
+
+            // Fetch sandbag distributions
+            sandbagDistributions = await HttpClient.GetFromJsonAsync<List<SandbagDistribution>>("/api/data/sandbag-distributions");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            shelters = new List<Shelter>();
+            sandbagDistributions = new List<SandbagDistribution>();
+        }
+    }
+
     private void GoBack()
     {
         Navigation.NavigateTo("/");
