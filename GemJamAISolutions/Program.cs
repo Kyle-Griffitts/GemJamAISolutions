@@ -91,6 +91,7 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(GemJamAISolutions.Client._Imports).Assembly);
 
 app.MapAuthEndpoints();
+app.MapDataEndpoints();
 
 // Seed database with sample data
 using (var scope = app.Services.CreateScope())

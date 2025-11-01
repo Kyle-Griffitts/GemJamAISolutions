@@ -3,6 +3,7 @@ using System;
 using GemJamAISolutions.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GemJamAISolutions.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251101181157_AddSheltersTable")]
+    partial class AddSheltersTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -153,70 +156,6 @@ namespace GemJamAISolutions.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("flood_risk_results", (string)null);
-                });
-
-            modelBuilder.Entity("GemJamAISolutions.Data.SandbagDistribution", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("address");
-
-                    b.Property<DateTime?>("AvailableFrom")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("available_from");
-
-                    b.Property<DateTime?>("AvailableUntil")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("available_until");
-
-                    b.Property<bool>("BringOwnShovel")
-                        .HasColumnType("boolean")
-                        .HasColumnName("bring_own_shovel");
-
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("city");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<int>("MaxSandbagsPerResident")
-                        .HasColumnType("integer")
-                        .HasColumnName("max_sandbags_per_resident");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("state");
-
-                    b.Property<string>("ZipCode")
-                        .HasColumnType("text")
-                        .HasColumnName("zip_code");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("sandbag_distributions", (string)null);
                 });
 
             modelBuilder.Entity("GemJamAISolutions.Data.Shelter", b =>
