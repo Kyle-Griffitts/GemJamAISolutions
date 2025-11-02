@@ -8,6 +8,8 @@ public class SandbagDistribution
     public string City { get; set; } = string.Empty;
     public string State { get; set; } = "Florida";
     public string? ZipCode { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     public int MaxSandbagsPerResident { get; set; } = 10;
     public bool BringOwnShovel { get; set; } = true;
     public DateTime? AvailableFrom { get; set; }

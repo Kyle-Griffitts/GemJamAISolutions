@@ -3,6 +3,7 @@ using System;
 using GemJamAISolutions.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GemJamAISolutions.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251101201025_AddLatLonToSheltersAndSandbags")]
+    partial class AddLatLonToSheltersAndSandbags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,23 +103,31 @@ namespace GemJamAISolutions.Migrations
                         .HasColumnType("text")
                         .HasColumnName("address");
 
+                    b.Property<string>("ContourSource")
+                        .HasColumnType("text")
+                        .HasColumnName("contour_source");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("DemSource")
-                        .HasColumnType("text")
-                        .HasColumnName("dem_source");
-
                     b.Property<float?>("ElevationAtAddress")
                         .HasColumnType("real")
                         .HasColumnName("elevation_at_address");
 
+                    b.Property<float?>("ElevationDifference")
+                        .HasColumnType("real")
+                        .HasColumnName("elevation_difference");
+
                     b.Property<string>("FloodZone")
                         .HasColumnType("text")
                         .HasColumnName("flood_zone");
+
+                    b.Property<string>("GeojsonPath")
+                        .HasColumnType("text")
+                        .HasColumnName("geojson_path");
 
                     b.Property<bool?>("IsInFloodZone")
                         .HasColumnType("boolean")
@@ -133,6 +144,14 @@ namespace GemJamAISolutions.Migrations
                     b.Property<string>("ModelResponse")
                         .HasColumnType("text")
                         .HasColumnName("model_response");
+
+                    b.Property<float?>("NearestContourElevation")
+                        .HasColumnType("real")
+                        .HasColumnName("nearest_contour_elevation");
+
+                    b.Property<string>("ProcessedPath")
+                        .HasColumnType("text")
+                        .HasColumnName("processed_path");
 
                     b.HasKey("Id");
 
