@@ -29,13 +29,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Lat).HasColumnName("lat").IsRequired();
             entity.Property(e => e.Lon).HasColumnName("lon").IsRequired();
             entity.Property(e => e.ElevationAtAddress).HasColumnName("elevation_at_address");
-            entity.Property(e => e.NearestContourElevation).HasColumnName("nearest_contour_elevation");
-            entity.Property(e => e.ElevationDifference).HasColumnName("elevation_difference");
             entity.Property(e => e.FloodZone).HasColumnName("flood_zone");
             entity.Property(e => e.IsInFloodZone).HasColumnName("is_in_flood_zone");
-            entity.Property(e => e.ContourSource).HasColumnName("contour_source");
-            entity.Property(e => e.GeojsonPath).HasColumnName("geojson_path");
-            entity.Property(e => e.ProcessedPath).HasColumnName("processed_path");
+            entity.Property(e => e.DemSource).HasColumnName("dem_source");
             entity.Property(e => e.ModelResponse).HasColumnName("model_response");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
@@ -51,6 +47,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.City).HasColumnName("city").IsRequired();
             entity.Property(e => e.State).HasColumnName("state").IsRequired();
             entity.Property(e => e.ZipCode).HasColumnName("zip_code");
+            entity.Property(e => e.Latitude).HasColumnName("latitude");
+            entity.Property(e => e.Longitude).HasColumnName("longitude");
             entity.Property(e => e.ShelterType).HasColumnName("shelter_type").IsRequired();
             entity.Property(e => e.IsPetFriendly).HasColumnName("is_pet_friendly").IsRequired();
             entity.Property(e => e.OpenedDate).HasColumnName("opened_date");
@@ -68,6 +66,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.City).HasColumnName("city").IsRequired();
             entity.Property(e => e.State).HasColumnName("state").IsRequired();
             entity.Property(e => e.ZipCode).HasColumnName("zip_code");
+            entity.Property(e => e.Latitude).HasColumnName("latitude");
+            entity.Property(e => e.Longitude).HasColumnName("longitude");
             entity.Property(e => e.MaxSandbagsPerResident).HasColumnName("max_sandbags_per_resident").IsRequired();
             entity.Property(e => e.BringOwnShovel).HasColumnName("bring_own_shovel").IsRequired();
             entity.Property(e => e.AvailableFrom).HasColumnName("available_from");

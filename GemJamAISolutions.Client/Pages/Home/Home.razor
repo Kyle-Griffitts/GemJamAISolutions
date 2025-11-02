@@ -1,9 +1,12 @@
 @page "/"
 @using GemJamAISolutions.Client.Services
 @using Microsoft.JSInterop
+@using System.Net.Http.Json
+@using System.Text.Json.Serialization
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject HttpClient HttpClient
 
 <PageTitle>FloodReady AI - Add Location</PageTitle>
 
@@ -107,9 +110,58 @@
         }
     }
 
-    private void HandleSubmit()
+    private async Task HandleSubmit()
     {
-        // Redirect to analysis page after form submission
+        try
+        {
+            // Build full address string for display
+            var fullAddress = $"{addressModel.AddressLine1}, {addressModel.City}, {addressModel.State}";
+
+            // Geocode the address using our server-side endpoint with separate parameters
+            var baseUri = Navigation.BaseUri;
+            var geocodeUrl = $"{baseUri}api/data/geocode?street={Uri.EscapeDataString(addressModel.AddressLine1)}&city={Uri.EscapeDataString(addressModel.City)}&state={Uri.EscapeDataString(addressModel.State)}";
+
+            await JSRuntime.InvokeVoidAsync("console.log", $"Requesting geocode for: {geocodeUrl}");
+            var response = await HttpClient.GetAsync(geocodeUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var results = await response.Content.ReadFromJsonAsync<List<NominatimResult>>();
+
+                if (results != null && results.Count > 0)
+                {
+                    var location = results[0];
+                    var lat = double.Parse(location.Lat);
+                    var lon = double.Parse(location.Lon);
+
+                    // Console log the coordinates
+                    await JSRuntime.InvokeVoidAsync("console.log", $"Address: {fullAddress}");
+                    await JSRuntime.InvokeVoidAsync("console.log", $"Latitude: {lat}");
+                    await JSRuntime.InvokeVoidAsync("console.log", $"Longitude: {lon}");
+                    await JSRuntime.InvokeVoidAsync("console.log", "Coordinates object:", new { latitude = lat, longitude = lon, address = fullAddress });
+
+                    // Redirect to analysis page with coordinates
+                    Navigation.NavigateTo($"/analysis?lat={lat}&lon={lon}&address={Uri.EscapeDataString(fullAddress)}");
+                    return;
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("console.warn", "No geocoding results found for address");
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("console.error", $"Geocoding request failed: {response.StatusCode}");
+                await JSRuntime.InvokeVoidAsync("console.error", $"Error details: {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error geocoding address: {ex.Message}");
+        }
+
+        // Redirect to analysis page (even if geocoding failed)
         Navigation.NavigateTo("/analysis");
     }
 
@@ -154,5 +206,17 @@
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+    }
+
+    public class NominatimResult
+    {
+        [JsonPropertyName("lat")]
+        public string Lat { get; set; } = string.Empty;
+
+        [JsonPropertyName("lon")]
+        public string Lon { get; set; } = string.Empty;
+
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; set; } = string.Empty;
     }
 }
