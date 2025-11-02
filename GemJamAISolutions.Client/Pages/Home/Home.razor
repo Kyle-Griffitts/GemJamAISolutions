@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject HttpClient HttpClient
+@inject HttpClient Http
 
 <PageTitle>FloodReady AI - Add Location</PageTitle>
 
@@ -183,6 +184,22 @@
             Navigation.NavigateTo("/analysis");
         }
     }
+
+    private async Task DockerCall(string fullAddress)
+    {
+
+        var response = await Http.PostAsJsonAsync("http://localhost:8000/", fullAddress);
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadAsStringAsync();
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error from container: {response.StatusCode} - {error}");
+        }
+    }
+
 
     private void CloseModal()
     {
