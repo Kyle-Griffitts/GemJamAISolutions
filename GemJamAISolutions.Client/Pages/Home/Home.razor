@@ -88,12 +88,30 @@
             </div>
         </div>
     }
+
+    <!-- Polling Spinner Modal -->
+    @if (isPolling)
+    {
+        <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center modal-backdrop-custom" style="z-index: 1060; background-color: rgba(0, 0, 0, 0.5);">
+            <div class="bg-white rounded-4 shadow-lg p-4 mx-3" style="max-width: 400px; width: 100%;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h3 class="fs-5 fw-semibold text-dark mb-2">Analyzing Flood Risk</h3>
+                    <p class="text-secondary small mb-0">@pollingMessage</p>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     private UserInfo? userInfo;
     private AddressModel addressModel = new();
     private bool showLocationModal = false;
+    private bool isPolling = false;
+    private string pollingMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,8 +159,10 @@
                     await JSRuntime.InvokeVoidAsync("console.log", $"Longitude: {lon}");
                     await JSRuntime.InvokeVoidAsync("console.log", "Coordinates object:", new { latitude = lat, longitude = lon, address = fullAddress });
 
-                    // Redirect to analysis page with coordinates
-                    Navigation.NavigateTo($"/analysis?lat={lat}&lon={lon}&address={Uri.EscapeDataString(fullAddress)}");
+                    // Call Docker API with location data and wait for completion
+                    await DockerCall(fullAddress, lat, lon);
+
+                    // Navigation will happen after polling completes
                     return;
                 }
                 else
@@ -185,18 +205,137 @@
         }
     }
 
-    private async Task DockerCall(string fullAddress)
+    private async Task PollJobStatus(string jobId, string address, double lat, double lon)
     {
+        const int maxAttempts = 60; // Maximum 60 attempts (2 minutes)
+        const int delayMs = 4000; // 2 seconds between attempts
 
-        var response = await Http.PostAsJsonAsync("http://localhost:8000/", fullAddress);
-        if (response.IsSuccessStatusCode)
+        isPolling = true;
+        pollingMessage = "Initializing analysis...";
+        StateHasChanged();
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            var result = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Polling job {jobId} - Attempt {attempt}/{maxAttempts}");
+            await JSRuntime.InvokeVoidAsync("console.log", $"Polling attempt {attempt}/{maxAttempts}");
+
+            try
+            {
+                var jobResponse = await Http.GetAsync($"http://localhost:8000/jobs/{jobId}");
+
+                if (jobResponse.IsSuccessStatusCode)
+                {
+                    var jobResult = await jobResponse.Content.ReadFromJsonAsync<JobStatusResponse>();
+                    Console.WriteLine($"Job status: {jobResult?.Status}");
+                    await JSRuntime.InvokeVoidAsync("console.log", $"Job status: {jobResult?.Status}");
+
+                    pollingMessage = $"Status: {jobResult?.Status ?? "checking"}... (Attempt {attempt}/{maxAttempts})";
+                    StateHasChanged();
+
+                    if (jobResult?.Status == "done")
+                    {
+                        Console.WriteLine("✅ Job completed!");
+                        await JSRuntime.InvokeVoidAsync("console.log", "✅ Job completed!");
+                        await JSRuntime.InvokeVoidAsync("console.log", "Job result:", jobResult);
+
+                        pollingMessage = "Analysis complete! ✅";
+                        StateHasChanged();
+                        await Task.Delay(1000); // Show success message briefly
+
+                        isPolling = false;
+                        StateHasChanged();
+
+                        // Navigate to analysis page with results
+                        Navigation.NavigateTo($"/analysis?lat={lat}&lon={lon}&address={Uri.EscapeDataString(address)}");
+                        return;
+                    }
+                    else if (jobResult?.Status == "failed" || jobResult?.Status == "error")
+                    {
+                        Console.WriteLine($"❌ Job failed: {jobResult?.Message ?? jobResult?.Error}");
+                        await JSRuntime.InvokeVoidAsync("console.error", $"Job failed: {jobResult?.Message ?? jobResult?.Error}");
+
+                        pollingMessage = "Analysis failed ❌";
+                        StateHasChanged();
+                        await Task.Delay(2000);
+
+                        isPolling = false;
+                        StateHasChanged();
+                        return;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⏳ Job still {jobResult?.Status}, waiting {delayMs}ms...");
+                    }
+                }
+                else
+                {
+                    var error = await jobResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error fetching job: {jobResponse.StatusCode} - {error}");
+                    await JSRuntime.InvokeVoidAsync("console.error", $"Error fetching job: {jobResponse.StatusCode} - {error}");
+
+                    pollingMessage = $"Retrying... ({jobResponse.StatusCode})";
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception during polling: {ex.Message}");
+                await JSRuntime.InvokeVoidAsync("console.error", $"Exception during polling: {ex.Message}");
+
+                pollingMessage = $"Connection issue, retrying...";
+                StateHasChanged();
+            }
+
+            // Wait before next attempt
+            await Task.Delay(delayMs);
+        }
+
+        Console.WriteLine($"⚠️ Job polling timed out after {maxAttempts} attempts");
+        await JSRuntime.InvokeVoidAsync("console.warn", $"Job polling timed out after {maxAttempts} attempts");
+
+        pollingMessage = "Analysis timed out ⚠️";
+        StateHasChanged();
+        await Task.Delay(2000);
+
+        isPolling = false;
+        StateHasChanged();
+    }
+
+    private async Task DockerCall(string fullAddress, double lat, double lon)
+    {
+        Console.WriteLine($"Calling Docker API with: {fullAddress}, {lat}, {lon}");
+
+        var requestData = new FloodAnalysisRequest
+        {
+            Address = fullAddress,
+            Lat = lat,
+            Lon = lon
+        };
+
+        // Step 1: Call /analyze to start the job
+        var analyzeResponse = await Http.PostAsJsonAsync("http://localhost:8000/analyze", requestData);
+        if (analyzeResponse.IsSuccessStatusCode)
+        {
+            var analyzeResult = await analyzeResponse.Content.ReadFromJsonAsync<AnalyzeResponse>();
+            Console.WriteLine($"Analyze response - job_id: {analyzeResult?.JobId}, status: {analyzeResult?.Status}");
+
+            if (analyzeResult != null && !string.IsNullOrEmpty(analyzeResult.JobId))
+            {
+                Console.WriteLine($"Got job_id: {analyzeResult.JobId}");
+                await JSRuntime.InvokeVoidAsync("console.log", $"🔑 Job ID: {analyzeResult.JobId}");
+
+                // Step 2: Poll GET /jobs/{job_id} until complete
+                await PollJobStatus(analyzeResult.JobId, fullAddress, lat, lon);
+            }
+            else
+            {
+                Console.WriteLine("No job_id received from analyze endpoint");
+            }
         }
         else
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Error from container: {response.StatusCode} - {error}");
+            var error = await analyzeResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Error from container: {analyzeResponse.StatusCode} - {error}");
         }
     }
 
@@ -235,5 +374,47 @@
 
         [JsonPropertyName("display_name")]
         public string DisplayName { get; set; } = string.Empty;
+    }
+
+    public class FloodAnalysisRequest
+    {
+        [JsonPropertyName("address")]
+        public string Address { get; set; } = string.Empty;
+
+        [JsonPropertyName("lat")]
+        public double Lat { get; set; }
+
+        [JsonPropertyName("lon")]
+        public double Lon { get; set; }
+    }
+
+    public class AnalyzeResponse
+    {
+        [JsonPropertyName("job_id")]
+        public string JobId { get; set; } = string.Empty;
+
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
+
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
+    }
+
+    public class JobStatusResponse
+    {
+        [JsonPropertyName("job_id")]
+        public string JobId { get; set; } = string.Empty;
+
+        [JsonPropertyName("status")]
+        public string Status { get; set; } = string.Empty;
+
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
+
+        [JsonPropertyName("result")]
+        public object? Result { get; set; }
+
+        [JsonPropertyName("error")]
+        public string? Error { get; set; }
     }
 }
